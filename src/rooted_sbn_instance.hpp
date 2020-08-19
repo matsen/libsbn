@@ -167,6 +167,7 @@ TEST_CASE("RootedSBNInstance: subsplit support and TrainSimpleAverage") {
                                          {"00001|01110|00100", 1},
                                          {"00010|11101|00100", 1}});
   CHECK_EQ(correct_parameters, inst.PrettyIndexedSBNParameters());
+  inst.SBNParametersToCSV("_ignore/sbn_parameters.csv");
 }
 
 TEST_CASE("RootedSBNInstance: gradients") {
