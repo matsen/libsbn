@@ -49,6 +49,14 @@ size_t GPDAG::NodeCount() const { return dag_nodes_.size(); }
 size_t GPDAG::RootsplitAndPCSPCount() const { return rootsplit_and_pcsp_count_; }
 
 size_t GPDAG::GeneralizedPCSPCount() const {
+  // #247: Let's have a single function that does this counting, with a flag saying if
+  // we include the fake subsplits or not, and count the fake subsplits in advance.
+  //
+  // Alternatively, we could just forget about the difference between PCSP count
+  // including or excluding fake subsplits, which is relatively small, and always just
+  // include them. This would mean that our sbn_parameters_ would be a little too big,
+  // but it's not an important difference. In that case we could just return the size()
+  // of the indexer, right?
   size_t fake_subsplit_parameter_count = 0;
   for (size_t taxon_idx = 0; taxon_idx < taxon_count_; taxon_idx++) {
     fake_subsplit_parameter_count += dag_nodes_[taxon_idx]->GetRootwardRotated().size();
@@ -341,6 +349,11 @@ std::vector<Bitset> GPDAG::GetChildrenSubsplits(const Bitset &subsplit,
     // exist). But we still need to create and connect to fake subsplits in the DAG. A
     // subsplit has a fake subsplit as a child if the first chunk is non-zero and the
     // second chunk has exactly one bit set to 1.
+    //
+    // #247: I'm trying to understand how this section of the code gets called. I
+    // thought that we had added the fake subsplits using
+    // ExpandPCSPIndexerAndSubsplitToRange, in which case we shouldn't be able to get
+    // here. But we definitely do!
     if (subsplit.SplitChunk(0).Any() &&
         subsplit.SplitChunk(1).SingletonOption().has_value()) {
       // The fake subsplit corresponds to the second chunk of subsplit.
@@ -406,6 +419,12 @@ void GPDAG::BuildNodes() {
 
   // We will create fake subsplits and insert to dag_nodes_.
   // These nodes will take IDs in [0, taxon_count_).
+  //
+  // #247: could we first expand the subsplit support to include fake subsplits and
+  // avoid the need to do something special here? We could keep track of where the fake
+  // subsplits are (in a vector or something). This would also take care of #236
+  // (otherwise we will have to do a complete re-indexing every time we add a new
+  // taxon).
   Bitset zero(taxon_count_);
   for (size_t taxon_idx = 0; taxon_idx < taxon_count_; taxon_idx++) {
     Bitset fake(taxon_count_);
@@ -443,6 +462,11 @@ void GPDAG::SetPCSPIndexerEncodingToFullSubsplits() {
 
 void GPDAG::ExpandPCSPIndexerAndSubsplitToRange() {
   // Add fake subsplits to expand gpcsp_indexer_ and subsplit_to_range_.
+  //
+  // #247: Use some function implementing an agreed-upon means of making a fake bitset.
+  // Specifically, we should just be able to append zeroes.
+  //
+  // Also, increment a fake subsplit count.
   for (size_t i = 0; i < taxon_count_; i++) {
     const auto current_bitset = dag_nodes_[i]->GetBitset();
     IterateOverRootwardEdges(
