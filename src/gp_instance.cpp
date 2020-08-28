@@ -14,6 +14,7 @@
 
 using namespace GPOperations;  // NOLINT
 
+// This is a spurious comment.
 void GPInstance::PrintStatus() {
   const auto tree_count = tree_collection_.TreeCount();
   const auto taxon_count = tree_collection_.TaxonCount();
