@@ -70,7 +70,7 @@ TagDoubleMap TaxonNameMunging::TagDateMapOfTagTaxonMap(TagStringMap tag_taxon_ma
   }
   if (have_parsed_a_date) {
     for (auto &[id, date] : tag_date_map) {
-      date = max_date - date;
+      date = max_date + date;
     }
   }
   return tag_date_map;
